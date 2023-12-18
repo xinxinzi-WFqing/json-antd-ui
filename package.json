@@ -1,0 +1,9 @@
+{
+  "name": "json-antd-ui",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "antd": "^5.12.2"
+  }
+}
