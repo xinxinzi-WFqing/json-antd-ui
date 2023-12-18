@@ -142,42 +142,47 @@ const DisplayJSON = ({
   keyDescription = [],
   defaultActiveKey = true,
   title = "JSON 预览",
-}: DisplayJSONProps) => {
+  showJSON = false,
+}: DisplayJSONProps & {
+  showJSON;
+}) => {
   const [modal, contextHolder] = Modal.useModal();
 
   return (
     <Card
       title={title}
       extra={
-        <>
-          {contextHolder}
-          <Button
-            type={"primary"}
-            onClick={() => {
-              modal.info({
-                title: "原始 JSON",
-                content: (
-                  <CodeMirror
-                    value={JSON.stringify(data, null, 2)}
-                    height={"500px"}
-                    theme={quietlight}
-                    lang={"json"}
-                    extensions={[jsonLanguage]}
-                    editable={false}
-                    width={"100%"}
-                  />
-                ),
-                // 点击蒙层关闭
-                maskClosable: true,
-                closable: true,
-                footer: null,
-                width: "60%",
-              });
-            }}
-          >
-            查看原始 JSON
-          </Button>
-        </>
+        showJSON && (
+          <>
+            {contextHolder}
+            <Button
+              type={"primary"}
+              onClick={() => {
+                modal.info({
+                  title: "原始 JSON",
+                  content: (
+                    <CodeMirror
+                      value={JSON.stringify(data, null, 2)}
+                      height={"500px"}
+                      theme={quietlight}
+                      lang={"json"}
+                      extensions={[jsonLanguage]}
+                      editable={false}
+                      width={"100%"}
+                    />
+                  ),
+                  // 点击蒙层关闭
+                  maskClosable: true,
+                  closable: true,
+                  footer: null,
+                  width: "60%",
+                });
+              }}
+            >
+              查看原始 JSON
+            </Button>
+          </>
+        )
       }
     >
       <DisplayJSONItem
