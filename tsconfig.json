@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es2020", // 或 "esnext" 以针对最新的 ECMAScript 版本
+    "module": "es2020", // 或 "esnext"
+    "lib": ["esnext", "dom"], // 包含更多现代的 API
+    "declaration": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react"
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "tests"]
+}

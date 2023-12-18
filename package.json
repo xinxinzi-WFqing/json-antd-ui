@@ -1,9 +1,27 @@
 {
   "name": "json-antd-ui",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "license": "MIT",
-  "dependencies": {
-    "antd": "^5.12.2"
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w",
+    "prepublish": "npm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@codemirror/lang-json": "^6.0.1",
+    "@uiw/codemirror-theme-quietlight": "^4.21.21",
+    "@uiw/codemirror-theme-vscode": "^4.21.21",
+    "@uiw/react-codemirror": "^4.21.21",
+    "antd": "~5.9.0",
+    "prettier": "^3.1.1",
+    "typescript": "~5.3.3"
+  },
+  "peerDependencies": {
+    "antd": "~5.9.0"
   }
 }
