@@ -1,2 +1,5 @@
-import DisplayJSON from "./components/DisplayJSON";
-export { DisplayJSON };
+import DisplayJSON, {
+  KeyDescType,
+  KeyDescription,
+} from "./components/DisplayJSON";
+export { DisplayJSON, KeyDescType, KeyDescription };
