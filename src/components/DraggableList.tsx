@@ -1,7 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import { List } from "antd";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import Icon from "antd/es/icon";
+import {
+  DragDropContext,
+  Draggable,
+  Droppable,
+  DropResult,
+} from "react-beautiful-dnd";
 import { DragOutlined } from "@ant-design/icons";
 
 const EditableDraggableList = ({
@@ -10,9 +14,15 @@ const EditableDraggableList = ({
   onChange,
   editData,
   ItemComponent,
+}: {
+  id: string;
+  data: any[];
+  onChange: (data: any[]) => void;
+  editData: boolean;
+  ItemComponent: (props: any) => React.ReactNode;
 }) => {
   // 处理拖动结束的逻辑
-  const onDragEnd = (result) => {
+  const onDragEnd = (result: DropResult) => {
     if (!result.destination) {
       return;
     }

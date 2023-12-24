@@ -1,20 +1,19 @@
-import React, { FC, useEffect } from "react";
+import React, { useEffect } from "react";
 import {
-  Descriptions,
-  Collapse,
-  List,
-  Typography,
-  Button,
   Badge,
-  Modal,
+  Button,
   Card,
+  Collapse,
+  DatePicker,
+  Descriptions,
   Image,
-  Space,
-  Switch,
   Input,
   InputNumber,
-  DatePicker,
   message,
+  Modal,
+  Space,
+  Switch,
+  Typography,
 } from "antd";
 import CodeMirror from "@uiw/react-codemirror";
 import { quietlight } from "@uiw/codemirror-theme-quietlight";
@@ -22,17 +21,14 @@ import { jsonLanguage } from "@codemirror/lang-json";
 import dayjs from "dayjs";
 import { detectTimeType, formatTime } from "../utils/time";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-dayjs.extend(customParseFormat);
-
 import weekday from "dayjs/plugin/weekday";
 import localeData from "dayjs/plugin/localeData";
+import EditableDraggableList from "./DraggableList";
+
+dayjs.extend(customParseFormat);
 
 dayjs.extend(weekday);
 dayjs.extend(localeData);
-
-import EditableDraggableList from "./DraggableList";
-
-const { Panel } = Collapse;
 
 const KeyDescriptionsContext = React.createContext<KeyDescription[]>([]);
 // 编辑模式开关 context
@@ -134,7 +130,7 @@ export const Item = ({
   const editData = React.useContext(EditDataContext);
 
   // 检查value是否为JSON 字符串
-  const isJSON = (value) => {
+  const isJSON = (value: string) => {
     try {
       JSON.parse(value);
       return true;
@@ -143,7 +139,7 @@ export const Item = ({
     }
   };
 
-  const getPrimitiveType = (data) => {
+  const getPrimitiveType = (data: any) => {
     if (typeof data === "object") {
       if (Array.isArray(data)) {
         return PrimitiveType.Array;
@@ -352,7 +348,7 @@ const DisplayJSONItem = ({
 
   const isArray = Array.isArray(data);
   // 获取 data 深度
-  const getDepth = (data) => {
+  const getDepth = (data: { [x: string]: any }) => {
     if (typeof data !== "object") {
       return 0;
     }
@@ -417,7 +413,7 @@ const DisplayJSONItem = ({
                     newData.splice(index, 1);
                     newData.splice(index - 1, 0, item);
                     onChange?.(newData);
-                    message.success("上移成功");
+                    message.success("上移成功").then();
                   }}
                   disabled={index === 0}
                 >
@@ -433,7 +429,7 @@ const DisplayJSONItem = ({
                     newData.splice(index, 1);
                     newData.splice(index + 1, 0, item);
                     onChange?.(newData);
-                    message.success("下移成功");
+                    message.success("下移成功").then();
                   }}
                   disabled={index === data.length - 1}
                 >
@@ -448,7 +444,7 @@ const DisplayJSONItem = ({
                     const newData = [...data];
                     newData.splice(index, 1);
                     onChange?.(newData);
-                    message.success("删除成功");
+                    message.success("删除成功").then();
                   }}
                 >
                   删除
@@ -557,7 +553,7 @@ const DisplayJSON = <T extends Record<string, any> | Record<string, any>[]>({
   column,
   layout,
 }: Omit<DisplayJSONProps<T>, "editData"> & {
-  showJSON;
+  showJSON: boolean;
   editKeyDescriptions?: boolean;
   card?: any;
   extra?: any;

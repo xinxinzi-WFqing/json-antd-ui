@@ -1,4 +1,4 @@
-import dayjs, { Dayjs } from "dayjs";
+import { Dayjs } from "dayjs";
 
 enum TimeType {
   TimestampSeconds = "Timestamp (seconds)",
@@ -27,7 +27,7 @@ function detectTimeType(timeString: string): TimeType {
   }
   // 检查是否符合ISO 8601格式
   else if (
-    /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|(\+|-)\d{2}:\d{2})/.test(timeString)
+    /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|([+\-])\d{2}:\d{2})/.test(timeString)
   ) {
     return TimeType.ISO8601;
   }
