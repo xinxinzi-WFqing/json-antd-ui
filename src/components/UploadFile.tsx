@@ -33,7 +33,10 @@ export const UploadFileItem = ({
   );
 };
 
-export function fileToBase64(file: File, callback: (base64: string) => void) {
+export function fileToBase64(
+  file: UploadFile,
+  callback: (base64: string) => void,
+) {
   const reader = new FileReader();
   reader.onload = function (e) {
     if (typeof e.target.result === "string") {
@@ -42,5 +45,5 @@ export function fileToBase64(file: File, callback: (base64: string) => void) {
       message.error("文件转换失败").then();
     }
   };
-  reader.readAsDataURL(file);
+  reader.readAsDataURL(file as any);
 }

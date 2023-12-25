@@ -24,8 +24,8 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import weekday from "dayjs/plugin/weekday";
 import localeData from "dayjs/plugin/localeData";
 import EditableDraggableList from "./DraggableList";
-import { JsonObject } from "../../dist/interface";
 import { fileToBase64, UploadFileItem } from "./UploadFile";
+import { JsonObject } from "../interface";
 
 dayjs.extend(customParseFormat);
 
