@@ -25,107 +25,22 @@ import weekday from "dayjs/plugin/weekday";
 import localeData from "dayjs/plugin/localeData";
 import EditableDraggableList from "./DraggableList";
 import { fileToBase64, UploadFileItem } from "./UploadFile";
-import { JsonObject } from "../interface";
+import {
+  DisplayJSONProps,
+  JsonObject,
+  KeyDescription,
+  KeyDescType,
+  PrimitiveType,
+} from "../interface";
+import {
+  DescriptionsContext,
+  EditDataContext,
+  KeyDescriptionsContext,
+} from "../context";
 
 dayjs.extend(customParseFormat);
-
 dayjs.extend(weekday);
 dayjs.extend(localeData);
-
-const KeyDescriptionsContext = React.createContext<KeyDescription[]>([]);
-// 编辑模式开关 context
-const EditDataContext = React.createContext<boolean>(false);
-const DescriptionsContext = React.createContext<{
-  column?: number;
-  layout?: "horizontal" | "vertical";
-}>({});
-
-export enum KeyDescType {
-  Time = "time",
-  Date = "date",
-  Link = "link",
-  Image = "image",
-  PDF = "pdf",
-  JSONString = "JSONString",
-}
-
-export enum PrimitiveType {
-  String = "string",
-  Number = "number",
-  Boolean = "boolean",
-  Object = "object",
-  Array = "array",
-}
-
-export type KeyDescription = {
-  key: string;
-  description: string;
-  // 显示顺序 越大越靠前 可以为负数
-  index?: number;
-  // 是否显示
-  hidden?: boolean;
-  onChange?: (
-    value: any,
-    path: (string | number)[],
-    all: any,
-    ...args: any[]
-  ) => void | boolean;
-} & (
-  | {
-      type?: KeyDescType.Link;
-      // 属性
-      props?: {
-        copyable?: boolean;
-      };
-    }
-  | {
-      type?: KeyDescType.Image;
-      // 属性
-      props?: {
-        width?: string;
-        height?: string;
-      };
-    }
-  | {
-      type?: KeyDescType.Time | KeyDescType.Date;
-      // 属性
-      props?: {
-        format?: string;
-      };
-    }
-  | {
-      type?: KeyDescType.PDF;
-      // 属性
-      props?: {
-        width?: string;
-        height?: string;
-        type?: "base64" | "url";
-      };
-    }
-  | {
-      type?: PrimitiveType.String;
-      // 属性
-      props?: {
-        copyable?: boolean;
-      };
-    }
-  | {
-      type?: KeyDescType.JSONString;
-      props?: {};
-    }
-);
-
-interface DisplayJSONProps<T extends JsonObject> {
-  // 任意类型的数据
-  data: T;
-  allData: T;
-  // key的解释
-  keyDescriptions?: KeyDescription[];
-  title?: string;
-  // 默认全部展开折叠面板 list bool
-  defaultActiveKey?: boolean;
-  onChange?: (value: T) => void;
-}
 
 export const Item = ({
   keyDescription,
@@ -160,6 +75,11 @@ export const Item = ({
   const type = keyDescription?.type || primitiveType;
   const props = (keyDescription?.props as any) || {};
   const onItemChange = keyDescription?.onChange;
+  const hidden = keyDescription?.hidden;
+
+  if (hidden) {
+    return <Typography.Text type={"secondary"}>已隐藏</Typography.Text>;
+  }
 
   const itemMap = new Map<typeof type, React.ReactNode>([
     [
@@ -176,7 +96,15 @@ export const Item = ({
           />
         ) : (
           <Input
-            value={value}
+            // ellipsis 只取前后 props.ellipsis.length 个字符
+            value={
+              !!props.ellipsis
+                ? `${value.slice(0, props.ellipsis.length)}...${value.slice(
+                    value.length - props.ellipsis.length,
+                    value.length,
+                  )}`
+                : value
+            }
             onChange={(e) => {
               onChange?.(e.target.value);
               onItemChange?.(e.target.value, [], value);
@@ -184,7 +112,17 @@ export const Item = ({
           />
         )
       ) : (
-        <Typography.Text copyable={props.copyable}>{value}</Typography.Text>
+        <Typography.Text copyable={props.copyable}>
+          {
+            // ellipsis 只取前后 props.ellipsis.length 个字符
+            !!props.ellipsis
+              ? `${value.slice(0, props.ellipsis.length)}...${value.slice(
+                  value.length - props.ellipsis.length,
+                  value.length,
+                )}`
+              : value
+          }
+        </Typography.Text>
       ),
     ],
     [
@@ -267,7 +205,7 @@ export const Item = ({
             onChange?.(formatTime(res, type));
           }}
         />
-      ) : (
+      ) : value === null || value === undefined || value === "" ? null : (
         dayjs(value).format(props.format || "YYYY-MM-DD HH:mm:ss")
       ),
     ],
@@ -283,7 +221,7 @@ export const Item = ({
             onChange?.(res.format(type));
           }}
         />
-      ) : (
+      ) : value === null || value === undefined || value === "" ? null : (
         dayjs(value).format(props.format || "YYYY-MM-DD HH:mm:ss")
       ),
     ],
