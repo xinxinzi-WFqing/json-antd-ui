@@ -24,6 +24,8 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import weekday from "dayjs/plugin/weekday";
 import localeData from "dayjs/plugin/localeData";
 import EditableDraggableList from "./DraggableList";
+import { JsonObject } from "../../dist/interface";
+import { fileToBase64, UploadFileItem } from "./UploadFile";
 
 dayjs.extend(customParseFormat);
 
@@ -62,6 +64,12 @@ export type KeyDescription = {
   index?: number;
   // 是否显示
   hidden?: boolean;
+  onChange?: (
+    value: any,
+    path: (string | number)[],
+    all: any,
+    ...args: any[]
+  ) => void | boolean;
 } & (
   | {
       type?: KeyDescType.Link;
@@ -91,6 +99,7 @@ export type KeyDescription = {
       props?: {
         width?: string;
         height?: string;
+        type?: "base64" | "url";
       };
     }
   | {
@@ -106,11 +115,10 @@ export type KeyDescription = {
     }
 );
 
-interface DisplayJSONProps<
-  T extends Record<string, any> | Record<string, any>[],
-> {
+interface DisplayJSONProps<T extends JsonObject> {
   // 任意类型的数据
   data: T;
+  allData: T;
   // key的解释
   keyDescriptions?: KeyDescription[];
   title?: string;
@@ -123,12 +131,14 @@ export const Item = ({
   keyDescription,
   description,
   value,
+  allValue,
   defaultActiveKey,
   onChange,
 }: {
   keyDescription?: KeyDescription;
   description?: string;
   value: any;
+  allValue: any;
   defaultActiveKey?: boolean;
   onChange?: (value: any) => void;
 }) => {
@@ -149,6 +159,7 @@ export const Item = ({
   const primitiveType = getPrimitiveType(value);
   const type = keyDescription?.type || primitiveType;
   const props = (keyDescription?.props as any) || {};
+  const onItemChange = keyDescription?.onChange;
 
   const itemMap = new Map<typeof type, React.ReactNode>([
     [
@@ -159,6 +170,7 @@ export const Item = ({
             value={value}
             onChange={(e) => {
               onChange?.(e.target.value);
+              onItemChange?.(e.target.value, [], value);
             }}
             autoSize={{ minRows: 4 }}
           />
@@ -167,6 +179,7 @@ export const Item = ({
             value={value}
             onChange={(e) => {
               onChange?.(e.target.value);
+              onItemChange?.(e.target.value, [], value);
             }}
           />
         )
@@ -208,6 +221,7 @@ export const Item = ({
       PrimitiveType.Object,
       <DisplayJSONItem
         data={value}
+        allData={allValue}
         defaultActiveKey={defaultActiveKey}
         title={description}
         onChange={onChange}
@@ -217,6 +231,7 @@ export const Item = ({
       PrimitiveType.Array,
       <DisplayJSONItem
         data={value}
+        allData={allValue}
         defaultActiveKey={defaultActiveKey}
         title={description}
         onChange={onChange}
@@ -232,6 +247,7 @@ export const Item = ({
             return {};
           }
         })()}
+        allData={allValue}
         defaultActiveKey={defaultActiveKey}
         title={description}
         onChange={(obj) => {
@@ -309,30 +325,33 @@ export const Item = ({
     [
       KeyDescType.PDF,
       editData ? (
-        <Input
-          value={value}
-          onChange={(e) => {
-            onChange?.(e.target.value);
+        <UploadFileItem
+          onChange={async (info) => {
+            if (props.type === "base64") {
+              fileToBase64(info, async function (base64String: string) {
+                if (onItemChange(base64String, [], allValue, info)) {
+                  onChange?.(base64String);
+                }
+              });
+            }
           }}
         />
       ) : (
-        <Card
+        <iframe
           style={{
             maxWidth: "100%",
             width: props.width || "auto",
             height: props.height || "auto",
             objectFit: "cover",
+            border: "none",
           }}
-        >
-          <iframe
-            src={value}
-            style={{
-              width: "100%",
-              height: "100%",
-              border: "none",
-            }}
-          />
-        </Card>
+          src={
+            {
+              base64: value,
+              url: value,
+            }[props.type || "url"] || value
+          }
+        />
       ),
     ],
   ]);
@@ -342,6 +361,7 @@ export const Item = ({
 
 const DisplayJSONItem = ({
   data,
+  allData,
   title = "",
   defaultActiveKey = true,
   extra,
@@ -352,6 +372,50 @@ const DisplayJSONItem = ({
   const keyDescriptions = React.useContext(KeyDescriptionsContext);
   const editData = React.useContext(EditDataContext);
   const { column, layout } = React.useContext(DescriptionsContext);
+
+  const calcKeyArray = () =>
+    Object.keys(data).sort((a, b) => {
+      const aIndex = keyDescriptions.find((item) => item.key === a)?.index || 0;
+      const bIndex = keyDescriptions.find((item) => item.key === b)?.index || 0;
+      if (aIndex !== bIndex) {
+        // 如果 index 不同，则优先根据 index 排序
+        return bIndex - aIndex;
+      } else {
+        // 如果 index 相同
+        const aValue = data[a];
+        const bValue = data[b];
+        const aValueIsNumber = typeof aValue === "number";
+        const bValueIsNumber = typeof bValue === "number";
+        const aValueIsString = typeof aValue === "string";
+        const bValueIsString = typeof bValue === "string";
+
+        if (aValueIsNumber && bValueIsNumber) {
+          // 如果两者都是数字，则按数字大小排序
+          return aValue - bValue;
+        } else if (aValueIsString && bValueIsString) {
+          // 如果两者都是字符串，则按字符串长度排序
+          return aValue.length - bValue.length;
+        } else if (aValueIsNumber) {
+          // 如果 aValue 是数字而 bValue 不是，则 aValue 排在前面（或者后面，根据需求调整）
+          return -1;
+        } else if (bValueIsNumber) {
+          // 如果 bValue 是数字而 aValue 不是，则 bValue 排在前面（或者后面，根据需求调整）
+          return 1;
+        } else {
+          // 其他情况保持原顺序
+          return 0;
+        }
+      }
+    });
+
+  // 记录当前顺序数组
+  const [keyArray, setKeyArray] = React.useState(calcKeyArray());
+
+  useEffect(() => {
+    if (!editData) {
+      setKeyArray(calcKeyArray());
+    }
+  }, [data, editData, keyDescriptions]);
 
   const isArray = Array.isArray(data);
   // 获取 data 深度
@@ -399,6 +463,7 @@ const DisplayJSONItem = ({
             children: (
               <DisplayJSONItem
                 data={item}
+                allData={allData}
                 defaultActiveKey={defaultActiveKey}
                 onChange={(value) => {
                   const newData = [...data];
@@ -509,42 +574,7 @@ const DisplayJSONItem = ({
         extra={extra}
         layout={layout ?? depth > 0 ? "horizontal" : "vertical"}
       >
-        {Object.keys(data)
-          .sort((a, b) => {
-            const aIndex =
-              keyDescriptions.find((item) => item.key === a)?.index || 0;
-            const bIndex =
-              keyDescriptions.find((item) => item.key === b)?.index || 0;
-            if (aIndex !== bIndex) {
-              // 如果 index 不同，则优先根据 index 排序
-              return bIndex - aIndex;
-            } else {
-              // 如果 index 相同
-              const aValue = data[a];
-              const bValue = data[b];
-              const aValueIsNumber = typeof aValue === "number";
-              const bValueIsNumber = typeof bValue === "number";
-              const aValueIsString = typeof aValue === "string";
-              const bValueIsString = typeof bValue === "string";
-
-              if (aValueIsNumber && bValueIsNumber) {
-                // 如果两者都是数字，则按数字大小排序
-                return aValue - bValue;
-              } else if (aValueIsString && bValueIsString) {
-                // 如果两者都是字符串，则按字符串长度排序
-                return aValue.length - bValue.length;
-              } else if (aValueIsNumber) {
-                // 如果 aValue 是数字而 bValue 不是，则 aValue 排在前面（或者后面，根据需求调整）
-                return -1;
-              } else if (bValueIsNumber) {
-                // 如果 bValue 是数字而 aValue 不是，则 bValue 排在前面（或者后面，根据需求调整）
-                return 1;
-              } else {
-                // 其他情况保持原顺序
-                return 0;
-              }
-            }
-          })
+        {keyArray
           .map((key) => {
             const keyDescription = keyDescriptions.find(
               (item) => item.key === key,
@@ -557,7 +587,16 @@ const DisplayJSONItem = ({
             }
             return (
               <Descriptions.Item
-                label={<Typography.Text strong>{description}</Typography.Text>}
+                label={
+                  <Typography.Text
+                    strong
+                    style={{
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {description}
+                  </Typography.Text>
+                }
                 labelStyle={{
                   whiteSpace: "pre-wrap",
                 }}
@@ -567,6 +606,7 @@ const DisplayJSONItem = ({
                   keyDescription={keyDescription}
                   description={description}
                   value={value}
+                  allValue={allData}
                   defaultActiveKey={defaultActiveKey}
                   onChange={(value) => {
                     const newData = { ...data };
@@ -583,7 +623,7 @@ const DisplayJSONItem = ({
   }
 };
 
-const DisplayJSON = <T extends Record<string, any> | Record<string, any>[]>({
+const DisplayJSON = <T extends JsonObject>({
   data: defaultData,
   keyDescriptions: defaultKeyDescriptions = [],
   defaultActiveKey = true,
@@ -596,7 +636,7 @@ const DisplayJSON = <T extends Record<string, any> | Record<string, any>[]>({
   defaultEdit = false,
   column,
   layout,
-}: Omit<DisplayJSONProps<T>, "editData"> & {
+}: Omit<Omit<DisplayJSONProps<T>, "editData">, "allData"> & {
   showJSON: boolean;
   editKeyDescriptions?: boolean;
   card?: any;
@@ -722,6 +762,7 @@ const DisplayJSON = <T extends Record<string, any> | Record<string, any>[]>({
             <Card {...card} title={title} extra={extra}>
               <DisplayJSONItem
                 data={data}
+                allData={data}
                 onChange={(value) => {
                   try {
                     setData(value);
@@ -736,6 +777,7 @@ const DisplayJSON = <T extends Record<string, any> | Record<string, any>[]>({
           ) : (
             <DisplayJSONItem
               data={data}
+              allData={data}
               onChange={(value) => {
                 try {
                   setData(value);
