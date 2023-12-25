@@ -37,6 +37,7 @@ import {
   EditDataContext,
   KeyDescriptionsContext,
 } from "../context";
+import { countBranches } from "../utils";
 
 dayjs.extend(customParseFormat);
 dayjs.extend(weekday);
@@ -85,7 +86,7 @@ export const Item = ({
     [
       PrimitiveType.String,
       editData ? (
-        value.length > 140 ? (
+        value?.length > 140 ? (
           <Input.TextArea
             value={value}
             onChange={(e) => {
@@ -349,11 +350,17 @@ const DisplayJSONItem = ({
   // 记录当前顺序数组
   const [keyArray, setKeyArray] = React.useState(calcKeyArray());
 
+  const count = countBranches(data);
+
   useEffect(() => {
     if (!editData) {
       setKeyArray(calcKeyArray());
     }
-  }, [data, editData, keyDescriptions]);
+  }, [count, editData, keyDescriptions]);
+
+  useEffect(() => {
+    setKeyArray(calcKeyArray());
+  }, [count]);
 
   const isArray = Array.isArray(data);
   // 获取 data 深度
