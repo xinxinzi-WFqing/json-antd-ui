@@ -44,9 +44,10 @@ export enum KeyDescType {
   Link = "link",
   Image = "image",
   PDF = "pdf",
+  JSONString = "JSONString",
 }
 
-enum PrimitiveType {
+export enum PrimitiveType {
   String = "string",
   Number = "number",
   Boolean = "boolean",
@@ -99,6 +100,10 @@ export type KeyDescription = {
         copyable?: boolean;
       };
     }
+  | {
+      type?: KeyDescType.JSONString;
+      props?: {};
+    }
 );
 
 interface DisplayJSONProps<
@@ -129,16 +134,6 @@ export const Item = ({
 }) => {
   const editData = React.useContext(EditDataContext);
 
-  // 检查value是否为JSON 字符串
-  const isJSON = (value: string) => {
-    try {
-      JSON.parse(value);
-      return true;
-    } catch (error) {
-      return false;
-    }
-  };
-
   const getPrimitiveType = (data: any) => {
     if (typeof data === "object") {
       if (Array.isArray(data)) {
@@ -147,12 +142,7 @@ export const Item = ({
         return PrimitiveType.Object;
       }
     } else if (typeof data === "string") {
-      if (isJSON(data)) {
-        value = JSON.parse(data);
-        return PrimitiveType.Object;
-      } else {
-        return typeof data;
-      }
+      return typeof data;
     }
   };
 
@@ -230,6 +220,23 @@ export const Item = ({
         defaultActiveKey={defaultActiveKey}
         title={description}
         onChange={onChange}
+      />,
+    ],
+    [
+      KeyDescType.JSONString,
+      <DisplayJSONItem
+        data={(() => {
+          try {
+            return JSON.parse(value);
+          } catch {
+            return {};
+          }
+        })()}
+        defaultActiveKey={defaultActiveKey}
+        title={description}
+        onChange={(obj) => {
+          onChange?.(JSON.stringify(obj));
+        }}
       />,
     ],
     [
@@ -402,6 +409,28 @@ const DisplayJSONItem = ({
             ),
             extra: editData && (
               <Space>
+                {/* 复制 */}
+                <Button
+                  size={"small"}
+                  onClick={(event) => {
+                    // 冒泡
+                    event.stopPropagation();
+                    const newData = [...data];
+                    const item = newData[index];
+                    newData.splice(index + 1, 0, item);
+                    onChange?.(newData);
+                    // 详细的复制说明
+                    message
+                      .success(
+                        `复制成功，已将第 ${index + 1} 项复制插入到第 ${
+                          index + 2
+                        } 项`,
+                      )
+                      .then();
+                  }}
+                >
+                  复制
+                </Button>
                 {/* 上移 下移 删除 */}
                 <Button
                   size={"small"}
@@ -413,7 +442,12 @@ const DisplayJSONItem = ({
                     newData.splice(index, 1);
                     newData.splice(index - 1, 0, item);
                     onChange?.(newData);
-                    message.success("上移成功").then();
+                    // 详细的说明
+                    message
+                      .success(
+                        `上移成功，已将第 ${index + 1} 项与第 ${index} 项交换`,
+                      )
+                      .then();
                   }}
                   disabled={index === 0}
                 >
@@ -429,7 +463,14 @@ const DisplayJSONItem = ({
                     newData.splice(index, 1);
                     newData.splice(index + 1, 0, item);
                     onChange?.(newData);
-                    message.success("下移成功").then();
+                    // 详细的说明
+                    message
+                      .success(
+                        `下移成功，已将第 ${index + 1} 项与第 ${
+                          index + 2
+                        } 项交换`,
+                      )
+                      .then();
                   }}
                   disabled={index === data.length - 1}
                 >
@@ -444,7 +485,10 @@ const DisplayJSONItem = ({
                     const newData = [...data];
                     newData.splice(index, 1);
                     onChange?.(newData);
-                    message.success("删除成功").then();
+                    // 详细的说明
+                    message
+                      .success(`删除成功，已删除第 ${index + 1} 项`)
+                      .then();
                   }}
                 >
                   删除
