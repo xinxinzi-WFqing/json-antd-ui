@@ -1,0 +1,6 @@
+{
+  "parserOptions": {
+    "ecmaVersion": "latest", // 或更高
+    "sourceType": "module"
+  }
+}
