@@ -123,7 +123,14 @@ const EditableDraggableList = ({
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
                         >
-                          <ItemComponent value={item}></ItemComponent>
+                          <ItemComponent
+                            value={item}
+                            onChange={(value) => {
+                              const newData = [...data];
+                              newData[index] = value;
+                              onChange?.(newData);
+                            }}
+                          ></ItemComponent>
                           {editData && (
                             <>
                               <ActionButtons

@@ -515,9 +515,9 @@ const DisplayJSONItem = ({
       <Descriptions
         size="small"
         bordered
-        column={column ?? (depth > 0 ? 1 : undefined)}
+        column={column ?? depth > 0 ? 1 : undefined}
         extra={extra}
-        layout={layout ?? (depth > 0 ? "horizontal" : "vertical")}
+        layout={layout ?? depth > 0 ? "horizontal" : "vertical"}
       >
         {keyArray
           .map((key) => {
