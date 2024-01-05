@@ -633,6 +633,10 @@ const DisplayJSON = <T extends JsonObject>({
     ? keyDescriptionsOnChange
     : keyDescriptionsState[1];
 
+  useEffect(() => {
+    !controlled && setData(defaultData);
+  }, [defaultData]);
+
   const [modal, contextHolder] = Modal.useModal();
 
   const extra = showJSON && (

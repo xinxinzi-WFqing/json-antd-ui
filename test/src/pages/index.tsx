@@ -38,11 +38,37 @@ export default function HomePage() {
       gap={"large"}
     >
       <DisplayJSON
+        title={"受控组件"}
         card
         showJSON
         onChange={(data) => {
           setData(data);
         }}
+        keyDescriptions={[
+          {
+            key: "select",
+            type: KeyDescType.Select,
+            description: "选择",
+            props: {
+              options: [
+                {
+                  label: "张三",
+                  value: "张三",
+                },
+                {
+                  label: "李四",
+                  value: "李四",
+                },
+              ],
+            },
+          },
+        ]}
+        data={data}
+      />
+      <DisplayJSON
+        title={"非受控组件"}
+        card
+        showJSON
         keyDescriptions={[
           {
             key: "select",
