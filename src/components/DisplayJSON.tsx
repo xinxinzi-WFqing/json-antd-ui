@@ -11,6 +11,7 @@ import {
   InputNumber,
   message,
   Modal,
+  Select,
   Space,
   Switch,
   Typography,
@@ -67,7 +68,7 @@ export const Item = ({
       } else {
         return PrimitiveType.Object;
       }
-    } else if (typeof data === "string") {
+    } else {
       return typeof data;
     }
   };
@@ -134,6 +135,26 @@ export const Item = ({
           onChange={(value) => {
             onChange?.(value);
           }}
+          style={{
+            width: "100%",
+          }}
+        />
+      ) : (
+        <Typography.Text copyable={props.copyable}>{value}</Typography.Text>
+      ),
+    ],
+    [
+      KeyDescType.Select,
+      editData ? (
+        <Select
+          value={value}
+          onChange={(value) => {
+            onChange?.(value);
+          }}
+          style={{
+            width: "100%",
+          }}
+          options={props.options}
         />
       ) : (
         <Typography.Text copyable={props.copyable}>{value}</Typography.Text>
@@ -147,13 +168,13 @@ export const Item = ({
           onChange={(checked) => {
             onChange?.(checked);
           }}
-          checkedChildren={"是"}
-          unCheckedChildren={"否"}
+          checkedChildren={props.checkedChildren || "是"}
+          unCheckedChildren={props.unCheckedChildren || "否"}
         />
       ) : value ? (
-        <Badge status="success" text="是" />
+        <Badge status="success" text={props.checkedChildren || "是"} />
       ) : (
-        <Badge status="error" text="否" />
+        <Badge status="error" text={props.unCheckedChildren || "否"} />
       ),
     ],
     [
@@ -570,18 +591,20 @@ const DisplayJSONItem = ({
 
 const DisplayJSON = <T extends JsonObject>({
   data: defaultData,
+  onChange,
   keyDescriptions: defaultKeyDescriptions = [],
+  keyDescriptionsOnChange,
   defaultActiveKey = true,
   title = "JSON 预览",
   showJSON = false,
   editKeyDescriptions = false,
-  onChange,
   card,
   extra: defaultExtra,
   defaultEdit = false,
   column,
   layout,
 }: Omit<Omit<DisplayJSONProps<T>, "editData">, "allData"> & {
+  keyDescriptionsOnChange?: (keyDescriptions: KeyDescription[]) => void;
   showJSON?: boolean;
   editKeyDescriptions?: boolean;
   card?: any;
@@ -590,17 +613,25 @@ const DisplayJSON = <T extends JsonObject>({
   column?: number;
   layout?: "horizontal" | "vertical";
 }) => {
-  const [keyDescriptions, setKeyDescriptions] = React.useState<
-    KeyDescription[]
-  >(defaultKeyDescriptions);
-  const [data, setData] = React.useState<
-    Record<string, any> | Record<string, any>[]
-  >(defaultData);
+  const controlled = !!onChange;
+  const keyDescriptionsControlled = !!keyDescriptionsOnChange;
+  const keyDescriptionsState = React.useState<KeyDescription[]>(
+    defaultKeyDescriptions,
+  );
+  const dataState = React.useState<Record<string, any> | Record<string, any>[]>(
+    defaultData,
+  );
   const [editData, setEditData] = React.useState<boolean>(defaultEdit);
 
-  useEffect(() => {
-    setData(defaultData);
-  }, [defaultData]);
+  const data = controlled ? defaultData : dataState[0];
+  const setData = controlled ? onChange : dataState[1];
+
+  const keyDescriptions = keyDescriptionsControlled
+    ? defaultKeyDescriptions
+    : keyDescriptionsState[0];
+  const setKeyDescriptions = keyDescriptionsControlled
+    ? keyDescriptionsOnChange
+    : keyDescriptionsState[1];
 
   const [modal, contextHolder] = Modal.useModal();
 

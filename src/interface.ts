@@ -1,3 +1,5 @@
+import * as React from "react";
+
 type JsonValue = string | number | boolean | null | JsonArray | JsonObject;
 
 interface JsonArray extends Array<JsonValue> {}
@@ -13,6 +15,7 @@ export enum KeyDescType {
   Image = "image",
   PDF = "pdf",
   JSONString = "JSONString",
+  Select = "select",
 }
 
 export enum PrimitiveType {
@@ -25,7 +28,7 @@ export enum PrimitiveType {
 
 export type KeyDescription = {
   key: string;
-  description: string;
+  description?: string;
   // 显示顺序 越大越靠前 可以为负数
   index?: number;
   // 是否显示
@@ -79,8 +82,25 @@ export type KeyDescription = {
       };
     }
   | {
+      type?: PrimitiveType.Boolean;
+      // 属性
+      props?: {
+        checkedChildren?: React.ReactNode;
+        unCheckedChildren?: React.ReactNode;
+      };
+    }
+  | {
       type?: KeyDescType.JSONString;
       props?: {};
+    }
+  | {
+      type?: KeyDescType.Select;
+      props?: {
+        options: {
+          label: string;
+          value: string;
+        }[];
+      };
     }
 );
 
