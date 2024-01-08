@@ -48,6 +48,7 @@ export const Item = ({
   keyDescription,
   description,
   value,
+  path,
   allValue,
   defaultActiveKey,
   onChange,
@@ -55,6 +56,7 @@ export const Item = ({
   keyDescription?: KeyDescription;
   description?: string;
   value: any;
+  path?: (string | number)[];
   allValue: any;
   defaultActiveKey?: boolean;
   onChange?: (value: any) => void;
@@ -92,7 +94,7 @@ export const Item = ({
             value={value}
             onChange={(e) => {
               onChange?.(e.target.value);
-              onItemChange?.(e.target.value, [], value);
+              onItemChange?.(e.target.value, path, value);
             }}
             autoSize={{ minRows: 4 }}
           />
@@ -109,7 +111,7 @@ export const Item = ({
             }
             onChange={(e) => {
               onChange?.(e.target.value);
-              onItemChange?.(e.target.value, [], value);
+              onItemChange?.(e.target.value, path, allValue);
             }}
           />
         )
@@ -134,6 +136,7 @@ export const Item = ({
           value={value}
           onChange={(value) => {
             onChange?.(value);
+            onItemChange?.(value, path, value);
           }}
           style={{
             width: "100%",
@@ -150,6 +153,7 @@ export const Item = ({
           value={value}
           onChange={(value) => {
             onChange?.(value);
+            onItemChange?.(value, path, value);
           }}
           style={{
             width: "100%",
@@ -167,6 +171,7 @@ export const Item = ({
           checked={value}
           onChange={(checked) => {
             onChange?.(checked);
+            onItemChange?.(checked, path, value);
           }}
           checkedChildren={props.checkedChildren || "是"}
           unCheckedChildren={props.unCheckedChildren || "否"}
@@ -184,7 +189,11 @@ export const Item = ({
         allData={allValue}
         defaultActiveKey={defaultActiveKey}
         title={description}
-        onChange={onChange}
+        path={path}
+        onChange={(value) => {
+          onChange?.(value);
+          onItemChange?.(value, path, value);
+        }}
       />,
     ],
     [
@@ -194,7 +203,11 @@ export const Item = ({
         allData={allValue}
         defaultActiveKey={defaultActiveKey}
         title={description}
-        onChange={onChange}
+        path={path}
+        onChange={(value) => {
+          onChange?.(value);
+          onItemChange?.(value, path, value);
+        }}
       />,
     ],
     [
@@ -210,8 +223,15 @@ export const Item = ({
         allData={allValue}
         defaultActiveKey={defaultActiveKey}
         title={description}
+        path={path}
         onChange={(obj) => {
-          onChange?.(JSON.stringify(obj));
+          try {
+            let res = JSON.stringify(obj);
+            onChange?.(res);
+            onItemChange?.(value, path, value);
+          } catch (e) {
+            console.log(e);
+          }
         }}
       />,
     ],
@@ -224,7 +244,9 @@ export const Item = ({
           onChange={(res) => {
             // 判断原始值 类型
             const type = detectTimeType(value);
-            onChange?.(formatTime(res, type));
+            const formatData = formatTime(res, type);
+            onChange?.(formatData);
+            onItemChange?.(formatData, path, allValue);
           }}
         />
       ) : value === null || value === undefined || value === "" ? null : (
@@ -240,7 +262,9 @@ export const Item = ({
           onChange={(res) => {
             // 判断原始值 类型
             const type = detectTimeType(value);
-            onChange?.(res.format(type));
+            const formatData = res.format(type);
+            onChange?.(formatData);
+            onItemChange?.(formatData, path, allValue);
           }}
         />
       ) : value === null || value === undefined || value === "" ? null : (
@@ -254,6 +278,7 @@ export const Item = ({
           value={value}
           onChange={(e) => {
             onChange?.(e.target.value);
+            onItemChange?.(e.target.value, path, allValue);
           }}
         />
       ) : (
@@ -267,6 +292,7 @@ export const Item = ({
           value={value}
           onChange={(e) => {
             onChange?.(e.target.value);
+            onItemChange?.(e.target.value, path, allValue);
           }}
         />
       ) : (
@@ -289,8 +315,9 @@ export const Item = ({
           onChange={async (info) => {
             if (props.type === "base64") {
               fileToBase64(info, async function (base64String: string) {
-                if (onItemChange(base64String, [], allValue, info)) {
+                if (onItemChange(base64String, path, allValue, info)) {
                   onChange?.(base64String);
+                  onItemChange?.(base64String, path, allValue, info);
                 }
               });
             }
@@ -320,6 +347,7 @@ export const Item = ({
 };
 
 const DisplayJSONItem = ({
+  path = [],
   data,
   allData,
   title = "",
@@ -327,6 +355,7 @@ const DisplayJSONItem = ({
   extra,
   onChange,
 }: DisplayJSONProps<any> & {
+  path?: (string | number)[];
   extra?: React.ReactNode;
 }) => {
   const keyDescriptions = React.useContext(KeyDescriptionsContext);
@@ -416,6 +445,8 @@ const DisplayJSONItem = ({
           }}
           editData={editData}
           ItemComponent={Item}
+          path={path}
+          allData={allData}
         />
       );
     } else {
@@ -431,6 +462,7 @@ const DisplayJSONItem = ({
                 data={item}
                 allData={allData}
                 defaultActiveKey={defaultActiveKey}
+                path={[...path, index]}
                 onChange={(value) => {
                   const newData = [...data];
                   newData[index] = value;
@@ -572,6 +604,7 @@ const DisplayJSONItem = ({
                   keyDescription={keyDescription}
                   description={description}
                   value={value}
+                  path={[...path, key]}
                   allValue={allData}
                   defaultActiveKey={defaultActiveKey}
                   onChange={(value) => {

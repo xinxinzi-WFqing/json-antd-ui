@@ -76,12 +76,16 @@ const EditableDraggableList = ({
   onChange,
   editData,
   ItemComponent,
+  path = [],
+  allData,
 }: {
   id: string;
   data: any[];
   onChange: (data: any[]) => void;
   editData: boolean;
   ItemComponent: (props: any) => React.ReactNode;
+  path: (string | number)[];
+  allData: any;
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   // 处理拖动结束的逻辑
@@ -130,7 +134,9 @@ const EditableDraggableList = ({
                               newData[index] = value;
                               onChange?.(newData);
                             }}
-                          ></ItemComponent>
+                            path={[...path, index]}
+                            allData={allData}
+                          />
                           {editData && (
                             <>
                               <ActionButtons
