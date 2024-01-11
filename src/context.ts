@@ -8,3 +8,6 @@ export const DescriptionsContext = React.createContext<{
   column?: number;
   layout?: "horizontal" | "vertical";
 }>({});
+
+// log switch context
+export const LogSwitchContext = React.createContext<boolean>(false);

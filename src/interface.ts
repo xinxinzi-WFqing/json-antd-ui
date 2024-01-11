@@ -36,7 +36,7 @@ export type KeyDescription = {
   onChange?: (
     value: any,
     path: (string | number)[],
-    all: any,
+    beforeAll: any,
     ...args: any[]
   ) => void | boolean;
 } & (

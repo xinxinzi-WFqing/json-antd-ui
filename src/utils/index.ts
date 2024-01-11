@@ -1,4 +1,7 @@
 export function countBranches(obj: any): number {
+  if (obj === undefined) {
+    return 0;
+  }
   if (Array.isArray(obj)) {
     // 数组: 计数本身加上数组内部的分支数
     return obj.reduce((sum, item) => sum + countBranches(item), 1);

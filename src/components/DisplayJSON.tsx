@@ -37,6 +37,7 @@ import {
   DescriptionsContext,
   EditDataContext,
   KeyDescriptionsContext,
+  LogSwitchContext,
 } from "../context";
 import { countBranches } from "../utils";
 
@@ -94,7 +95,7 @@ export const Item = ({
             value={value}
             onChange={(e) => {
               onChange?.(e.target.value);
-              onItemChange?.(e.target.value, path, value);
+              onItemChange?.(e.target.value, path, allValue);
             }}
             autoSize={{ minRows: 4 }}
           />
@@ -136,7 +137,7 @@ export const Item = ({
           value={value}
           onChange={(value) => {
             onChange?.(value);
-            onItemChange?.(value, path, value);
+            onItemChange?.(value, path, allValue);
           }}
           style={{
             width: "100%",
@@ -153,7 +154,7 @@ export const Item = ({
           value={value}
           onChange={(value) => {
             onChange?.(value);
-            onItemChange?.(value, path, value);
+            onItemChange?.(value, path, allValue);
           }}
           style={{
             width: "100%",
@@ -171,7 +172,7 @@ export const Item = ({
           checked={value}
           onChange={(checked) => {
             onChange?.(checked);
-            onItemChange?.(checked, path, value);
+            onItemChange?.(checked, path, allValue);
           }}
           checkedChildren={props.checkedChildren || "是"}
           unCheckedChildren={props.unCheckedChildren || "否"}
@@ -192,7 +193,7 @@ export const Item = ({
         path={path}
         onChange={(value) => {
           onChange?.(value);
-          onItemChange?.(value, path, value);
+          onItemChange?.(value, path, allValue);
         }}
       />,
     ],
@@ -206,7 +207,7 @@ export const Item = ({
         path={path}
         onChange={(value) => {
           onChange?.(value);
-          onItemChange?.(value, path, value);
+          onItemChange?.(value, path, allValue);
         }}
       />,
     ],
@@ -228,7 +229,7 @@ export const Item = ({
           try {
             let res = JSON.stringify(obj);
             onChange?.(res);
-            onItemChange?.(value, path, value);
+            onItemChange?.(value, path, allValue);
           } catch (e) {
             console.log(e);
           }
@@ -348,7 +349,7 @@ export const Item = ({
 
 const DisplayJSONItem = ({
   path = [],
-  data,
+  data = {},
   allData,
   title = "",
   defaultActiveKey = true,
@@ -362,8 +363,15 @@ const DisplayJSONItem = ({
   const editData = React.useContext(EditDataContext);
   const { column, layout } = React.useContext(DescriptionsContext);
 
+  const log = React.useContext(LogSwitchContext);
+  if (log) {
+    // 打印一下 data 里元素的个数 和data
+    console.log("count", Object.keys(data).length);
+    console.log("data", data);
+  }
+
   const calcKeyArray = () =>
-    Object.keys(data).sort((a, b) => {
+    Object.keys(data || "").sort((a, b) => {
       const aIndex = keyDescriptions.find((item) => item.key === a)?.index || 0;
       const bIndex = keyDescriptions.find((item) => item.key === b)?.index || 0;
       if (aIndex !== bIndex) {
@@ -401,6 +409,7 @@ const DisplayJSONItem = ({
   const [keyArray, setKeyArray] = React.useState(calcKeyArray());
 
   const count = countBranches(data);
+  const keysListString = Object.keys(data).join(",");
 
   useEffect(() => {
     if (!editData) {
@@ -410,7 +419,7 @@ const DisplayJSONItem = ({
 
   useEffect(() => {
     setKeyArray(calcKeyArray());
-  }, [count]);
+  }, [keysListString]);
 
   const isArray = Array.isArray(data);
   // 获取 data 深度
@@ -421,6 +430,9 @@ const DisplayJSONItem = ({
     let depth = 0;
     for (let key in data) {
       const item = data[key];
+      if (item === null || item === undefined) {
+        continue;
+      }
       if (typeof item === "object" && Object.keys(item).length > 0) {
         const itemDepth = getDepth(item) + 1;
         if (itemDepth > depth) {
@@ -623,7 +635,7 @@ const DisplayJSONItem = ({
 };
 
 const DisplayJSON = <T extends JsonObject>({
-  data: defaultData,
+  data: defaultData = {} as T,
   onChange,
   keyDescriptions: defaultKeyDescriptions = [],
   keyDescriptionsOnChange,
@@ -636,6 +648,7 @@ const DisplayJSON = <T extends JsonObject>({
   defaultEdit = false,
   column,
   layout,
+  log = false,
 }: Omit<Omit<DisplayJSONProps<T>, "editData">, "allData"> & {
   keyDescriptionsOnChange?: (keyDescriptions: KeyDescription[]) => void;
   showJSON?: boolean;
@@ -645,6 +658,7 @@ const DisplayJSON = <T extends JsonObject>({
   defaultEdit?: boolean;
   column?: number;
   layout?: "horizontal" | "vertical";
+  log?: boolean;
 }) => {
   const controlled = !!onChange;
   const keyDescriptionsControlled = !!keyDescriptionsOnChange;
@@ -667,8 +681,14 @@ const DisplayJSON = <T extends JsonObject>({
     : keyDescriptionsState[1];
 
   useEffect(() => {
-    !controlled && setData(defaultData);
+    if (Object.keys(defaultData).length > 0) {
+      !controlled && setData(defaultData);
+    }
   }, [defaultData]);
+
+  useEffect(() => {
+    !keyDescriptionsControlled && setKeyDescriptions(defaultKeyDescriptions);
+  }, [defaultKeyDescriptions]);
 
   const [modal, contextHolder] = Modal.useModal();
 
@@ -763,16 +783,32 @@ const DisplayJSON = <T extends JsonObject>({
   );
 
   return (
-    <DescriptionsContext.Provider
-      value={{
-        column,
-        layout,
-      }}
-    >
-      <EditDataContext.Provider value={editData}>
-        <KeyDescriptionsContext.Provider value={keyDescriptions}>
-          {card ? (
-            <Card {...card} title={title} extra={extra}>
+    <LogSwitchContext.Provider value={log}>
+      <DescriptionsContext.Provider
+        value={{
+          column,
+          layout,
+        }}
+      >
+        <EditDataContext.Provider value={editData}>
+          <KeyDescriptionsContext.Provider value={keyDescriptions}>
+            {card ? (
+              <Card {...card} title={title} extra={extra}>
+                <DisplayJSONItem
+                  data={data}
+                  allData={data}
+                  onChange={(value) => {
+                    try {
+                      setData(value);
+                      onChange?.(value);
+                    } catch (error) {
+                      console.error(error);
+                    }
+                  }}
+                  defaultActiveKey={defaultActiveKey}
+                />
+              </Card>
+            ) : (
               <DisplayJSONItem
                 data={data}
                 allData={data}
@@ -785,28 +821,14 @@ const DisplayJSON = <T extends JsonObject>({
                   }
                 }}
                 defaultActiveKey={defaultActiveKey}
+                title={title}
+                extra={extra}
               />
-            </Card>
-          ) : (
-            <DisplayJSONItem
-              data={data}
-              allData={data}
-              onChange={(value) => {
-                try {
-                  setData(value);
-                  onChange?.(value);
-                } catch (error) {
-                  console.error(error);
-                }
-              }}
-              defaultActiveKey={defaultActiveKey}
-              title={title}
-              extra={extra}
-            />
-          )}
-        </KeyDescriptionsContext.Provider>
-      </EditDataContext.Provider>
-    </DescriptionsContext.Provider>
+            )}
+          </KeyDescriptionsContext.Provider>
+        </EditDataContext.Provider>
+      </DescriptionsContext.Provider>
+    </LogSwitchContext.Provider>
   );
 };
 
