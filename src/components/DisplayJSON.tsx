@@ -325,7 +325,7 @@ export const Item = ({
           }}
         />
       ) : (
-        <iframe
+        <embed
           style={{
             maxWidth: "100%",
             width: props.width || "auto",
@@ -409,8 +409,7 @@ const DisplayJSONItem = ({
   const [keyArray, setKeyArray] = React.useState(calcKeyArray());
 
   const count = countBranches(data);
-  const keysListString = Object.keys(data).join(",");
-
+  const keyListString = data !== null && typeof data === "object" ? Object.keys(data).join(",") : "";
   useEffect(() => {
     if (!editData) {
       setKeyArray(calcKeyArray());
@@ -419,7 +418,7 @@ const DisplayJSONItem = ({
 
   useEffect(() => {
     setKeyArray(calcKeyArray());
-  }, [keysListString]);
+  }, [keyListString]);
 
   const isArray = Array.isArray(data);
   // 获取 data 深度
