@@ -56,9 +56,19 @@ export type KeyDescription = {
       };
     }
   | {
-      type?: KeyDescType.Time | KeyDescType.Date;
+      type?: KeyDescType.Time;
       // 属性
       props?: {
+        showNow?: boolean;
+        format?: string;
+      };
+    }
+  | {
+      type?: KeyDescType.Date;
+      // 属性
+      props?: {
+        showTime?: boolean;
+        showNow?: boolean;
         format?: string;
       };
     }

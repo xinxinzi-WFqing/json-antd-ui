@@ -258,15 +258,13 @@ export const Item = ({
       KeyDescType.Date,
       editData ? (
         <DatePicker
-          showTime
           value={dayjs(value)}
-          onChange={(res) => {
-            // 判断原始值 类型
-            const type = detectTimeType(value);
-            const formatData = res.format(type);
-            onChange?.(formatData);
-            onItemChange?.(formatData, path, allValue);
+          onChange={(date, dateString) => {
+            onChange?.(dateString);
+            onItemChange?.(dateString, path, allValue);
           }}
+          format={"YYYY-MM-DD"}
+          {...props}
         />
       ) : value === null || value === undefined || value === "" ? null : (
         dayjs(value).format(props.format || "YYYY-MM-DD HH:mm:ss")
